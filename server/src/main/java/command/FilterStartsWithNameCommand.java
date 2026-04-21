@@ -19,27 +19,20 @@ public class FilterStartsWithNameCommand extends AbstractCommand {
     @Override
     public Response execute(Object arg) {
 
-        if (arg == null || !(arg instanceof String)) {
+        if (!(arg instanceof String prefix)) {
             return new Response("Ошибка: требуется строка");
         }
 
-        try {
-            String prefix = (String) arg;
+        List<StudyGroup> result = collectionManager.filterStartsWithName(prefix);
 
-            List<StudyGroup> result = collectionManager.filterStartsWithName(prefix);
-
-            if (result.isEmpty()) {
-                return new Response("Нет элементов с таким префиксом");
-            }
-
-            String output = result.stream()
-                    .map(StudyGroup::toString)
-                    .collect(Collectors.joining("\n"));
-
-            return new Response(output);
-
-        } catch (Exception e) {
-            return new Response("Ошибка: " + e.getMessage());
+        if (result.isEmpty()) {
+            return new Response("Нет элементов с таким префиксом");
         }
+
+        return new Response(
+                result.stream()
+                        .map(StudyGroup::toString)
+                        .collect(Collectors.joining("\n"))
+        );
     }
 }

@@ -1,5 +1,6 @@
 package manager;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import model.StudyGroup;
+import model.Semester; // если есть enum
 
 public class CollectionManager {
 
@@ -15,13 +17,25 @@ public class CollectionManager {
 
     public void add(StudyGroup group) {
         group.setId(currentId.getAndIncrement());
+
+        // если есть поле даты — обязательно
+        if (group.getCreationDate() == null) {
+            group.setCreationDate(LocalDate.now());
+        }
+
         collection.add(group);
     }
 
+    // ✅ ВСЕГДА отсортированная коллекция
     public List<StudyGroup> getAll() {
         return collection.stream()
                 .sorted(Comparator.comparing(StudyGroup::getName))
                 .collect(Collectors.toList());
+    }
+
+    // 🔥 ВАЖНО — исправлено
+    public List<StudyGroup> getCollection() {
+        return getAll(); // теперь всегда отсортировано
     }
 
     public boolean removeById(Long id) {
@@ -49,11 +63,11 @@ public class CollectionManager {
                 .count();
     }
 
-    public boolean removeAnyBySemester(Object semester) {
-        return collection.removeIf(g -> g.getSemesterEnum() != null && g.getSemesterEnum().equals(semester));
-    }
-
-    public List<StudyGroup> getCollection() {
-        return collection;
+    // ✅ лучше с enum
+    public boolean removeAnyBySemester(Semester semester) {
+        return collection.removeIf(g ->
+                g.getSemesterEnum() != null &&
+                g.getSemesterEnum().equals(semester)
+        );
     }
 }

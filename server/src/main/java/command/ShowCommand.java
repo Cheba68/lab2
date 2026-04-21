@@ -25,10 +25,10 @@ public class ShowCommand extends AbstractCommand {
             return new Response("Коллекция пуста");
         }
 
-        String result = groups.stream()
-                .map(StudyGroup::toString)
-                .collect(Collectors.joining("\n"));
-
-        return new Response(result);
+        return new Response(
+                groups.stream()
+                        .map(StudyGroup::toString)
+                        .collect(Collectors.joining("\n"))
+        );
     }
 }

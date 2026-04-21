@@ -15,19 +15,12 @@ public class CountLessThanStudentsCountCommand extends AbstractCommand {
     @Override
     public Response execute(Object arg) {
 
-        if (arg == null || !(arg instanceof Integer)) {
+        if (!(arg instanceof Integer count)) {
             return new Response("Ошибка: требуется число");
         }
 
-        try {
-            int count = (Integer) arg;
+        long result = collectionManager.countLessThanStudentsCount(count);
 
-            long result = collectionManager.countLessThanStudentsCount(count);
-
-            return new Response("Количество элементов: " + result);
-
-        } catch (Exception e) {
-            return new Response("Ошибка: " + e.getMessage());
-        }
+        return new Response("Количество элементов: " + result);
     }
 }

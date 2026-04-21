@@ -22,7 +22,6 @@ import command.HelpCommand;
 import command.InfoCommand;
 import command.RemoveAnyBySemesterCommand;
 import command.RemoveByIdCommand;
-import command.SaveCommand;
 import command.ShowCommand;
 import manager.CollectionManager;
 import manager.FileManager;
@@ -35,14 +34,21 @@ public class Server {
 
     public static void main(String[] args) {
         try {
-            
-            FileManager fileManager = new FileManager("data.xml");
 
+            FileManager fileManager = new FileManager("data.xml");
             CollectionManager collectionManager = new CollectionManager();
-            collectionManager.getAll().addAll(fileManager.load());
+
+            var loaded = fileManager.load();
+
+            if (loaded != null) {
+                loaded.forEach(collectionManager::add);
+            } else {
+                System.out.println("Файл пуст или не найден — загружена пустая коллекция");
+            }
+
             CommandManager commandManager = new CommandManager();
 
-            // регистрация команд
+            // ✅ исправленные команды
             commandManager.register("add", new AddCommand(collectionManager));
             commandManager.register("show", new ShowCommand(collectionManager));
             commandManager.register("remove_by_id", new RemoveByIdCommand(collectionManager));
@@ -50,10 +56,17 @@ public class Server {
             commandManager.register("info", new InfoCommand(collectionManager));
             commandManager.register("help", new HelpCommand(commandManager));
             commandManager.register("exit", new ExitCommand());
-            commandManager.register("starts_with", new FilterStartsWithNameCommand(collectionManager));
-            commandManager.register("count_less", new CountLessThanStudentsCountCommand(collectionManager));
-            commandManager.register("remove_by_se,ester", new RemoveAnyBySemesterCommand(collectionManager));
-            commandManager.register("save", new SaveCommand(collectionManager, fileManager));
+            commandManager.register("filter_starts_with_name", new FilterStartsWithNameCommand(collectionManager));
+            commandManager.register("count_less_than_students_count", new CountLessThanStudentsCountCommand(collectionManager));
+            commandManager.register("remove_any_by_semester", new RemoveAnyBySemesterCommand(collectionManager));
+
+            // ❗ save НЕ регистрируем для клиента
+
+            // ✅ shutdown hook один раз
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                fileManager.save(collectionManager.getAll());
+                System.out.println("Коллекция сохранена при завершении");
+            }));
 
             Selector selector = Selector.open();
 
@@ -92,7 +105,10 @@ public class Server {
                                 continue;
                             }
 
-                            byte[] data = buffer.array();
+                            buffer.flip();
+
+                            byte[] data = new byte[bytesRead];
+                            buffer.get(data);
 
                             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data));
                             Request request = (Request) in.readObject();
@@ -105,11 +121,10 @@ public class Server {
                             out.flush();
 
                             ByteBuffer responseBuffer = ByteBuffer.wrap(bos.toByteArray());
-                            client.write(responseBuffer);
-                            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                                fileManager.save(collectionManager.getAll());
-                                System.out.println("Коллекция сохранена");
-                            }));
+
+                            while (responseBuffer.hasRemaining()) {
+                                client.write(responseBuffer);
+                            }
 
                         } catch (Exception e) {
                             System.out.println("Ошибка клиента: " + e.getMessage());

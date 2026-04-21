@@ -2,6 +2,7 @@ package client;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
@@ -52,31 +53,56 @@ public class Client {
 
             try (SocketChannel channel = SocketChannel.open()) {
 
-                channel.configureBlocking(true);
+                channel.configureBlocking(false);
                 channel.connect(new InetSocketAddress(HOST, PORT));
 
-                // сериализация запроса
+                while (!channel.finishConnect()) {
+                    Thread.sleep(10); // 🔥 ВАЖНО
+                }
+
+                // --- сериализация запроса ---
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 ObjectOutputStream out = new ObjectOutputStream(bos);
                 out.writeObject(request);
                 out.flush();
 
                 ByteBuffer buffer = ByteBuffer.wrap(bos.toByteArray());
-                channel.write(buffer);
 
-                // чтение ответа
+                // --- запись (важно через цикл) ---
+                while (buffer.hasRemaining()) {
+                    channel.write(buffer);
+                }
+
+                // --- чтение ответа ---
                 ByteBuffer responseBuffer = ByteBuffer.allocate(10000);
-                channel.read(responseBuffer);
+                ByteArrayOutputStream responseData = new ByteArrayOutputStream();
+
+                Thread.sleep(100); // даём серверу время ответить
+
+                int bytesRead = channel.read(responseBuffer);
+                            
+                if (bytesRead <= 0) {
+                    System.out.println("Ответ от сервера не получен");
+                    continue;
+                }
+                
+                responseBuffer.flip();
+                responseData.write(responseBuffer.array(), 0, bytesRead);
 
                 ObjectInputStream in = new ObjectInputStream(
-                        new ByteArrayInputStream(responseBuffer.array())
+                        new ByteArrayInputStream(responseData.toByteArray())
                 );
 
                 Response response = (Response) in.readObject();
                 System.out.println(response.getMessage());
 
+            } catch (IOException e) {
+                System.out.println("Сервер временно недоступен. Попробуйте позже.");
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ignored) {}
             } catch (Exception e) {
-                System.out.println("Сервер временно недоступен");
+                System.out.println("Ошибка: " + e.getMessage());
             }
         }
     }

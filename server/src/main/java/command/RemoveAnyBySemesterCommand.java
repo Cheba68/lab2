@@ -16,23 +16,14 @@ public class RemoveAnyBySemesterCommand extends AbstractCommand {
     @Override
     public Response execute(Object arg) {
 
-        if (arg == null || !(arg instanceof Semester)) {
+        if (!(arg instanceof Semester semester)) {
             return new Response("Ошибка: требуется значение Semester");
         }
 
-        try {
-            Semester semester = (Semester) arg;
+        boolean removed = collectionManager.removeAnyBySemester(semester);
 
-            boolean removed = collectionManager.removeAnyBySemester(semester);
-
-            if (removed) {
-                return new Response("Элемент удалён");
-            } else {
-                return new Response("Элемент с таким semester не найден");
-            }
-
-        } catch (Exception e) {
-            return new Response("Ошибка: " + e.getMessage());
-        }
+        return removed
+                ? new Response("Элемент удалён")
+                : new Response("Элемент с таким semester не найден");
     }
 }

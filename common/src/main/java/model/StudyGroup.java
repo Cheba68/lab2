@@ -176,4 +176,8 @@ public class StudyGroup implements Comparable<StudyGroup>, Serializable{
                 ", groupAdmin=" + groupAdmin +
                 '}';
     }
+
+    public void setCreationDate(LocalDate now) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

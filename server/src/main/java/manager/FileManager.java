@@ -31,12 +31,18 @@ public class FileManager {
             StudyGroupListWrapper wrapper =
                     (StudyGroupListWrapper) unmarshaller.unmarshal(file);
 
+            // 🔥 КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ
+            if (wrapper == null || wrapper.getGroups() == null) {
+                return new ArrayList<>();
+            }
+
             return wrapper.getGroups();
 
         } catch (Exception e) {
             System.out.println("Ошибка загрузки файла: " + e.getMessage());
-            return new ArrayList<>();
         }
+
+        return new ArrayList<>(); // никогда не null
     }
 
     public void save(List<StudyGroup> collection) {
