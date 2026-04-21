@@ -1,0 +1,18 @@
+plugins {
+    id 'application'
+}
+
+dependencies {
+    implementation project(':common')
+
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.2'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.5'
+}
+
+application {
+    mainClass = 'client.Client'
+}
+
+tasks.named('run') {
+    standardInput = System.in
+}
